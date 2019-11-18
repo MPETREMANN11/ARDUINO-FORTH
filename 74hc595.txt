@@ -1,0 +1,85 @@
+\ *********************************************************************
+\ Convert 8 bit data in serial and send it to 74HC595 chip
+\    Filename:      74hc595.txt
+\    Date:          17/11/2019
+\    File Version:  1.0
+\    MCU:           ARDUINO all models
+\    Copyright:     Marc PETREMANN
+\    Author:        Marc PETREMANN
+\    GNU General Public License
+\ *********************************************************************
+\
+\ NB_4HC595     default: 1
+\   number of 74HC595 chips
+\ NB_REG_PINS   default: 8
+\   number of Register Pins
+\ defPIN:  ( PORTx mask --- <word> | <word> --- mask port)
+\   definition word. Define a pin
+\ init.74HC595 ( ---)
+\   init PORTB for SER RCLK and SRCLK in OUTPUT mode
+\ LOW and HIGH ( <pin> ---)
+\   set <pin> state LOW or HIGH
+\ csend ( c ---)
+\   send c value bit by bit to 74HC595
+
+-74hc595
+marker -74hc595
+
+\ for more 1 HC595, change 1 by number of HC595
+1 constant NB_4HC595
+NB_4HC595 8 * constant NB_REG_PINS \ number of Register Pins
+
+\ PORTB
+37 constant PORTB	\ Port B Data Register
+36 constant DDRB	\ Port B Data Direction Register
+\ 35 constant PINB	\ Port B Input Pins - unused
+
+: defPIN: ( PORTx mask --- <word> | <word> --- mask port)
+    eeprom
+    create
+        , ,             \ compile PORT and min mask
+    flash
+    does>
+        dup @           \ push pin mask
+        swap 2+ @       \ push PORT
+    ;
+
+\ for Arduino MEGA
+PORTB %00010000 defPIN: SER     \ PB4 -> pin 14 on the 75HC595 - dataPin
+PORTB %00100000 defPIN: RCLK    \ PB5 -> pin 12 on the 75HC595 - latchPin
+PORTB %01000000 defPIN: SRCLK   \ PB6 -> pin 11 on the 75HC595 - clockPin
+\ PORTB %10000000 defPIN: OE      \ PB7 -> pin 13 on the 75HC595 - unused
+
+: init.74HC595 ( ---)
+    SER     drop
+    RCLK    drop +
+    SRCLK   >r +  dup DDRB mset
+    r> mclr
+  ;
+
+\ usage example: SRLCK LOW
+: LOW   ( <pin> ---)
+    mclr  ;    \ turn relay ON
+: HIGH  ( <pin> ---)
+    mset  ;    \ turn relay OFF
+
+\ send 8 bit to 74HC595
+: csend ( c ---)
+    RCLK LOW                    \ latchPin LOW
+    NB_REG_PINS
+    for
+        dup $80 and
+        if      SER HIGH        \ datapin HIGH
+        else    SER LOW         \ datapin LOW
+        then
+        1 lshift
+        SRCLK HIGH              \ clockPin HIGH
+        SRCLK LOW               \ clockPin LOW
+    next
+    drop
+    RCLK HIGH                   \ latchPin HIGH
+  ;
+
+\ Example: 
+\ init.74HC595
+\ %10101010 csend
