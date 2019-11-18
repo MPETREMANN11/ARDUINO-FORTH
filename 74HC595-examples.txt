@@ -1,0 +1,74 @@
+\ *********************************************************************
+\ Examples using 74HC595 chip
+\    Filename:      74hc595-examples.txt
+\    Date:          18/11/2019
+\    File Version:  1.0
+\    MCU:           ARDUINO all models
+\    Copyright:     Marc PETREMANN
+\    Author:        Marc PETREMANN
+\    GNU General Public License
+\ *********************************************************************
+\
+\ require 74HC595.txt
+\
+\ 8 LEds are connected to Q0..Q7 outputs
+\
+\ test.LEDS ( ---)
+\   test of 8 leds one bye one
+\ led.fbi ( ---)
+\   flash LEDs like FBI car in movies
+\ led.fire ( ---)
+\   flash LEDs like emergency car
+
+-74examples
+marker -7474examples
+
+: test.LEDs ( ---)
+    init.74HC595
+    %00000001 csend 300 ms
+    %00000010 csend 300 ms
+    %00000100 csend 300 ms
+    %00001000 csend 300 ms
+    %00010000 csend 300 ms
+    %00100000 csend 300 ms
+    %01000000 csend 300 ms
+    %10000000 csend 300 ms
+    %00000000 csend         \ turn all LEDS off
+  ;
+
+: led.fbi ( ---)
+    init.74HC595
+    begin
+        8 for
+            %01010101 csend 60 ms
+            %00000000 csend 80 ms
+        next
+        %10101010 csend 300 ms
+    key? until
+    %00000000 csend         \ turn all LEDS off
+  ;
+
+: led.fire ( ---)
+    init.74HC595
+    begin
+        %10000000 csend 60 ms
+        %11000000 csend 60 ms
+        %01100000 csend 60 ms
+        %00110000 csend 60 ms
+        %00011000 csend 60 ms
+        %00001100 csend 60 ms
+        %00000110 csend 60 ms
+        %00000011 csend 60 ms
+        %00000001 csend 60 ms
+        %00000011 csend 60 ms
+        %00000110 csend 60 ms
+        %00001100 csend 60 ms
+        %00011000 csend 60 ms
+        %00110000 csend 60 ms
+        %01100000 csend 60 ms
+        %11000000 csend 60 ms
+    key? until
+    %00000000 csend         \ turn all LEDS off
+  ;
+
+
