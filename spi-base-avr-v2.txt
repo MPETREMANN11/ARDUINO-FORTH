@@ -1,0 +1,147 @@
+\ *********************************************************************
+\ Words to drive the SPI module on the ATmega2560
+\    Filename:      spi-base-avr-v2.txt.txt
+\    PJ 31-Jan-2016: initial listing spi-base-avr.txt
+\    adaptation MP 04-nov-2019
+\    Date:          18/11/2019
+\    MCU:           ARDUINO all models
+\    GNU General Public License
+\ *********************************************************************
+
+-spi-base
+marker -spi-base
+
+\ Registers of interest
+$24 constant DDRB       \ Port B Data Direction Register
+$25 constant PORTB      \ Port B Data Register
+
+$4c constant SPCR       \ SPI Control Register
+$4d constant SPSR       \ SPI Status Register
+$4e constant SPDR       \ SPI Data Register
+
+\ bit masks for ARDUINO MEGA
+%00000001 constant mSS1   ( PB0 )
+%00000010 constant mSCK   ( PB1 )
+%00000100 constant mMOSI  ( PB2 )
+%00001000 constant mMISO  ( PB3 )
+\ %00010000 constant mRST   ( PB4 )
+$80 constant mSPIF      \ SPI Interrupt Flag
+$40 constant mWCOL      \ Write Collision Flag
+
+: slave.select ( mSSx -- )     \ select slave x in mSSx constant
+    dup DDRB  mset      \ SS as output
+        PORTB mclr      \ deselect
+  ;
+: slave.deselect ( mSSx -- )   \ unselect slave
+    dup DDRB  mset      \ SS as output
+        PORTB mset      \ deselect
+  ;
+
+%01000000 constant SPCR_SPE     \ SPI Enable
+: spi.enable ( ---)
+    SPCR_SPE SPCR mset ;
+: spi.disable ( ---)
+    SPCR_SPE SPCR mclr ;
+
+%00100000 constant SPCR_DORD \ Data Order
+: LSB.first ( --- )     \ select LOW Signifiant Bit first
+    SPCR_DORD SPCR mset ;
+: MSB.first ( --- )     \ select MOST Signifiant Bit first
+    SPCR_DORD SPCR mclr ;
+
+%00010000 constant SPCR_MSTR    \ Master/Slave Select
+: Master.mode
+    SPCR_MSTR SPCR mset ;
+: Slave.mode
+    SPCR_MSTR SPCR mclr ;
+
+\ SPI mode
+%00000100 constant SPCR_CPHA    \ Clock Phase
+%00001000 constant SPCR_CPOL    \ Clock Polarity
+: Mode0
+    SPCR_CPHA SPCR mclr   \ Idle CLK = 0
+    SPCR_CPOL SPCR mclr  \ Sample on leading edge
+  ;
+: Mode1
+    SPCR_CPHA SPCR mclr   \ Idle CLK = 0
+    SPCR_CPOL SPCR mset    \ Sample on trailing edge
+  ;
+: Mode2
+    SPCR_CPHA SPCR mset     \ Idle CLK = 1
+    SPCR_CPOL SPCR mclr    \ Sample on trailing edge
+  ;
+: Mode3
+    SPCR_CPHA SPCR mset     \ Idle CLK = 1
+    SPCR_CPOL SPCR mset    \ Sample on leading edge
+  ;
+
+\ SPI clock speed
+%00000010 constant SPCR_SPR1    \ SPI Clock Rate Selects
+%00000001 constant SPCR_SPR0    \ SPI Clock Rate Selects
+%00000001 constant SPSR_SPI2x   \ Double SPI Speed
+: spi2X.off ( --- )
+    SPSR_SPI2x SPSR mclr
+  ;
+: spi2X.on  ( --- )
+    SPSR_SPI2x SPSR mset
+  ;
+: fosc/4
+    SPCR_SPR1  SPCR mclr
+    SPCR_SPR0  SPCR mclr
+    spi2X.off
+  ;
+: fosc/16     
+    SPCR_SPR1  SPCR mclr
+    SPCR_SPR0  SPCR mset
+    spi2X.off
+  ;
+: fosc/64     
+    SPCR_SPR1  SPCR mset
+    SPCR_SPR0  SPCR mclr
+    spi2X.off
+  ;
+: fosc/128    
+    SPCR_SPR1  SPCR mset
+    SPCR_SPR0  SPCR mset
+    spi2X.off
+  ;
+
+: spi.init ( -- ) 
+    mSCK DDRB mset              \ SCK as output
+    mSCK PORTB mclr             \ clock idles low
+    mMOSI DDRB mset             \ MOSI as output
+    mMISO DDRB mclr             \ MISO as input
+    mMISO PORTB mset            \ activate pull-up on MISO
+    mSS1 DDRB mset              \ SS as output
+    mSS1 PORTB mset             \ deselect
+        spi.enable
+        Master.mode
+        Mode0
+        fosc/16
+    SPSR c@ drop SPDR c@ drop   \ will clear SPIF
+;
+
+: spi.close ( -- )
+    $00 SPCR c!
+  ;
+: spi.wait ( -- )
+    begin 
+        mSPIF SPSR mtst 
+    until
+  ;
+: spi.cexch ( c1 -- c2 )
+    SPDR c! 
+    spi.wait 
+    SPDR c@
+  ;
+: spi.csend ( c1 -- )
+    spi.cexch drop
+  ;
+
+: spi.test ( -- ) 
+    mSS1 slave.select
+    spi.init
+    $1c spi.csend   \ an arbitrary byte
+    mSS1 slave.deselect
+    spi.close
+  ;
