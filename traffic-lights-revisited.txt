@@ -1,8 +1,3 @@
-<?php
-$this->mainTitle = "Example of FORTH traffic light management";
-$this->asideSection = "This is an example of the management of the ports on Arduino in FORTH "
-. "in which we manage three LEDs to simulate a traffic light";
-?>
 \ ******************************************************************************
 \ Example of FORTH traffic light management
 \
