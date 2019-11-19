@@ -1,0 +1,118 @@
+\ i2c-base-avr-v2.txt
+\ Low-level words for TWI/I2C on Atmega328P.
+\
+\ Modelled on i2c-twi.frt from amforth,
+\ i2c_base.txt for FlashForth on PIC18
+\ and the Atmel datasheet, of course.
+\ Peter J.  2014-10-27
+\ modified Marc PETREMANN 10 nov 2019
+
+-i2c-base
+marker -i2c-base
+ram
+
+\ Two-Wire-Interface Registers
+184 constant TWBR       \ TWI Bit Rate register
+185 constant TWSR       \ TWI Status Register
+186 constant TWAR	\ TWI (Slave) Address register
+187 constant TWDR       \ TWI Data register
+188 constant TWCR       \ TWI Control Register
+
+\ Bits in the Address register TWAR
+%11111110 constant TWAR_TWA     \ TWI (Slave) Address register Bits
+%00000001 constant TWAR_TWGCE   \ TWI General Call Recognition Enable Bit
+
+\ Bits in the Control Register TWCR
+%10000000 constant TWCR_TWINT   \ TWI Interrupt Flag
+%01000000 constant TWCR_TWEA    \ TWI Enable Acknowledge Bit
+%00100000 constant TWCR_TWSTA   \ TWI Start Condition Bit
+%00010000 constant TWCR_TWSTO   \ TWI Stop Condition Bit
+%00001000 constant TWCR_TWWC    \ TWI Write Collition Flag
+%00000100 constant TWCR_TWEN    \ TWI Enable Bit
+%00000001 constant TWCR_TWIE    \ TWI Interrupt Enable
+
+\ bits in the Status Register TWI 
+%11111000 constant TWSR_TWS     \ TWI Status
+%00000011 constant TWSR_TWPS    \ TWI Prescaler
+
+: i2c.init ( -- )               \ Set clock frequency to 100kHz
+    TWSR_TWPS TWSR mclr         \ prescale value = 1
+    [ Fcy 100 / 16 - 2/ ] literal TWBR c!
+    %00000011 TWCR mset
+  ;
+
+: i2c.wait ( -- ) \ Wait for operation to complete
+    \ When TWI operations are done, the hardware sets
+    \ the TWINT interrupt flag, which we will poll.
+    begin 
+        TWCR c@ TWCR_TWINT and 
+    until
+  ;
+
+: i2c.start ( -- ) \ Send start condition
+    [ TWCR_TWINT TWCR_TWEN or TWCR_TWSTA or ] literal TWCR c!
+    i2c.wait
+  ;
+
+: i2c.rsen ( -- ) \ Send repeated start condition
+    i2c.start     \ AVR doesn't distinguish
+  ;
+
+: i2c.stop ( -- ) \ Send stop condition
+    [ TWCR_TWINT TWCR_TWEN or TWCR_TWSTO or ] literal TWCR c!
+  ;
+
+\ Write one byte to bus, returning 0 if ACK was received, -1 otherwise.
+: i2c.c! ( c -- f )
+    i2c.wait \ Must have TWINT high to write data
+    TWDR c!
+    [ TWCR_TWINT TWCR_TWEN or ] literal TWCR c!
+    i2c.wait
+    \ Test for arrival of an ACK depending on what was sent.
+    TWSR c@ $f8 and $18 xor 0= if   0 exit  then \ SLA+W
+    TWSR c@ $f8 and $28 xor 0= if   0 exit  then \ data byte
+    TWSR c@ $f8 and $40 xor 0= if   0 exit  then \ SLA+R
+    -1  \ Something other than an ACK resulted
+;
+
+\ Read one byte and ack for another.
+: i2c.c@.ack ( -- c )
+    [ TWCR_TWINT TWCR_TWEN or TWCR_TWEA or ] literal TWCR c!
+    i2c.wait
+    TWDR c@
+  ;
+
+\ Read one last byte.
+: i2c.c@.nack ( -- c )
+    [ TWCR_TWINT TWCR_TWEN or ] literal TWCR c!
+    i2c.wait
+    TWDR c@
+ ;
+
+\ Address slave for writing, leaving true if slave ready.
+: i2c.addr.write ( 7-bit-addr -- f )
+    1 lshift 1 invert and \ Build full byte with write-bit as 0
+    i2c.start i2c.c! 
+    if      false 
+    else    true    then
+  ;
+
+\ Address slave for reading, leaving true if slave ready.
+: i2c.addr.read ( 7-bit-addr -- f )
+    1 lshift 1 or \ Build full byte with read-bit as 1
+    i2c.start i2c.c! 
+    if      false 
+    else    true    then
+  ;
+
+\ Detect presence of device, leaving true if slave responded.
+\ If the slave ACKs the read request, fetch one byte only.
+: i2c.ping? ( 7-bit-addr -- f )
+    1 lshift 1 or     \ Build full byte with read-bit as 1
+    i2c.start i2c.c! 0= 
+    if 
+        i2c.c@.nack drop true 
+    else 
+        false 
+    then
+  ;
