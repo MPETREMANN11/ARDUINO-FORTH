@@ -1,0 +1,77 @@
+<?php
+$this->mainTitle = "Example of FORTH traffic light management";
+$this->asideSection = "This is an example of the management of the ports on Arduino in FORTH "
+. "in which we manage three LEDs to simulate a traffic light";
+?>
+\ ******************************************************************************
+\ Example of FORTH traffic light management
+\
+\ Forth version: Flash Forth (http://flashforth.com/) 
+\ author: M PETREMANN
+\ Creation:     25 mai 2019
+\ Modification: 02 nov 2019
+\ ******************************************************************************
+
+decimal
+-readwrite           \ delete precedents definitions created after -readwrite
+marker -readwrite    \ define marker -readwrite
+decimal
+
+\ PORTB
+37 constant PORTB	\ Port B Data Register
+36 constant DDRB	\ Port B Data Direction Register
+\ 35 constant PINB	\ Port B Input Pins - unused
+
+: defLED: ( PORTx mask --- <word> | <word> --- mask port)
+    create
+        , ,             \ compile PORT and min mask
+    does>
+        dup @           \ push pin mask
+        swap 2+ @       \ push PORT
+    ;
+
+\ définition LED.xx
+eeprom
+PORTB $80 defLED: LED.red
+PORTB $40 defLED: LED.yellow
+PORTB $20 defLED: LED.green
+
+: led.ON ( <pin> ---)
+    mset  ;    \ turn pin ON
+: led.OFF ( <pin> ---)
+    mclr  ;    \ turn pin OFF
+
+: init.LEDs ( ---)
+    LED.red     drop
+    LED.yellow  drop +
+    LED.green   drop +  DDRB mset  ;
+
+: traffic.lights ( ---)
+    LED.green   led.ON   3000 ms    LED.green   led.OFF
+    LED.yellow  led.ON    800 ms    LED.yellow  led.OFF
+    LED.red     led.ON   3000 ms    LED.red     led.OFF  ;
+\ trafic.lights execute one light cycle
+
+: lights.loop ( ---)
+    init.LEDs
+    begin
+        traffic.lights
+    key? until ;
+
+\ german trafic light style
+: D.traffic ( ---)
+    LED.green   led.ON   3000 ms    LED.green   led.OFF
+    LED.yellow  led.ON    800 ms    LED.yellow  led.OFF
+    LED.red     led.ON   3000 ms    
+    LED.yellow  led.ON    800 ms 
+    \ simultaneous red and yellow ON
+    LED.red     led.OFF  \ simultaneous red and yellow OFF
+    LED.yellow  led.OFF  ;
+\ trafic.lights execute one light cycle
+
+: D.lights.loop ( ---)
+    init.LEDs
+    begin
+        D.traffic
+    key? until ;
+
