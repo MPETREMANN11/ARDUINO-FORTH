@@ -1,0 +1,61 @@
+\ *********************************************************************
+\    Title:         <?= $this->translate("Gestion d'un module 4 relais\n"); ?>
+\    Filename:      four-relays.txt
+\    Date:          13/11/2019
+\    File Version:  1.0
+\    MCU:           ARDUINO all models
+\    Copyright:     Marc PETREMANN
+\    Author:        Marc PETREMANN
+\ *********************************************************************
+\
+\ defRELAY: ( PORTx mask --- <word> | <word> --- mask port)
+\   word definition for RELAYx; need PORTx msk before this word
+\ init.RELAYS ( ---)
+\   initialisation of RELAYs
+\ relay.ON and RELAY.OFF
+\   activate and desactivate a relay. Need PORT msk of a relay
+
+-4relays
+marker -4relays
+
+\ PORTB
+37 constant PORTB	\ Port B Data Register
+36 constant DDRB	\ Port B Data Direction Register
+\ 35 constant PINB	\ Port B Input Pins - unused
+
+: defRELAY: ( PORTx mask --- <word> | <word> --- mask port)
+    create
+        eeprom
+        , ,             \ compile PORT and min mask
+        ram
+    does>
+        dup @           \ push pin mask
+        swap 2+ @       \ push PORT
+    ;
+
+\ definition RELAYx
+eeprom
+PORTB %00000001 defRELAY: RELAY1
+PORTB %00000010 defRELAY: RELAY2
+PORTB %00000100 defRELAY: RELAY3
+PORTB %00001000 defRELAY: RELAY4
+
+: init.RELAYS ( ---)
+    RELAY1  drop
+    RELAY2  drop +
+    RELAY3  drop +  
+    RELAY4  >r   +  dup DDRB mset  
+    r> mset
+  ;
+
+: relay.ON ( <pin> ---)
+    mclr  ;    \ turn relay ON
+: relay.OFF ( <pin> ---)
+    mset  ;    \ turn relay OFF
+
+
+\ test relays
+init.RELAYS
+RELAY1 relay.ON
+500 ms
+RELAY1 relay.OFF
