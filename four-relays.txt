@@ -1,5 +1,5 @@
 \ *********************************************************************
-\    Title:         <?= $this->translate("Gestion d'un module 4 relais\n"); ?>
+\    Title:         manage 4 relays module
 \    Filename:      four-relays.txt
 \    Date:          13/11/2019
 \    File Version:  1.0
