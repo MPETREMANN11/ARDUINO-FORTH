@@ -14,6 +14,7 @@
 \ bcd>bin ( c1 --- c2)
 \   convert BCD byte to binary
 
+
 : bin>bcd ( c1 -- c2 )        \ convert binary to BCD format
     #10 u/mod #4 lshift or
   ;
