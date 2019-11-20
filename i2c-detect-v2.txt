@@ -1,0 +1,55 @@
+\ file i2c-detect-v2.txt
+\ Detect all possible devices on I2C bus
+\ Only the 7 bit address schema is supported.
+\
+\ Copied from amForth distribution (lib/hardware/)
+\ and lightly edited to suit FlashForth 5.0 on AVR.
+\ Builds upon i2c-base.txt
+\ Peter J. 2014-10-27
+\ Modified Marc PETREMANN 11 nov. 2019
+\ require i2c-base-avr-v2.txt
+
+-i2c-detect
+marker -i2c-detect
+
+\ not all bitpatterns are valid 7bit i2c addresses
+: i2c.7bitaddr? ( a -- f)  
+    $07 $78 within 
+  ;
+
+: i2c.detect   ( -- )
+    base @ >r hex
+    cr 5 spaces             \ header line
+    $10 for 
+        r@ 2 u.r
+    next
+    $80 for
+        r@ $0f and 0= 
+        if      cr r@ 2 u.r [char] : emit space
+        then
+        r@ i2c.7bitaddr?
+        if  r@ i2c.ping?
+            if      dup 2 u.r
+            else    ." -- "     then
+        else    
+            ."    "
+        then
+    next
+    cr r> base !
+  ;
+
+\ With a lone Microchip TC74A0 sitting on the bus,
+\ the output looks like
+\ i2c.init  ok<$,ram> 
+\ i2c.detect 
+\      00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 
+\ 00 :                      -- -- -- -- -- -- -- -- -- 
+\ 10 : -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+\ 20 : -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+\ 30 : -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+\ 40 : -- -- -- -- -- -- -- -- 48 -- -- -- -- -- -- -- 
+\ 50 : -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+\ 60 : -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+\ 70 : -- -- -- -- -- -- -- --                         
+\  ok<$,ram> 
+\ i2c.stop  ok<$,ram> 
