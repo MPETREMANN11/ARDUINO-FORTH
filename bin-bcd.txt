@@ -8,8 +8,13 @@
 \    Author:        Marc PETREMANN
 \    GNU General Public License
 \ *********************************************************************
+\
+\ bin>bcd ( c1 --- c2)
+\   convert binay byte to BCD byte
+\ bcd>bin ( c1 --- c2)
+\   convert BCD byte to binary
 
-: bin>bcd ( c -- c )        \ convert binary to BCD format
+: bin>bcd ( c1 -- c2 )        \ convert binary to BCD format
     #10 u/mod #4 lshift or
   ;
 : bcd>bin ( c --- c)        \ convert BCD to binary format
