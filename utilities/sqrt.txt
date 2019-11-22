@@ -1,0 +1,44 @@
+\ *********************************************************************
+\ SQUARE root from d number
+\    Filename:      sqrt.txt
+\    Date:          22/11/2019
+\    File Version:  1.0
+\    MCU:           ARDUINO all models
+\    Copyright:     Marc PETREMANN
+\    Author:        Marc PETREMANN
+\    GNU General Public License
+\ *********************************************************************
+\
+\ sqrt ( d --- n,p | d = p*p + n ) 
+\   example:
+\   102. sqrt  \ result 2 10
+
+-sq
+marker -sq
+  
+: m* ( n1 n2 -- d)  \ signed 16*16->32 multiply
+    2dup xor >r
+    abs swap abs um*
+    r> ?dnegate
+  ;
+
+: 2over ( d1 d2 --- d1 d2 d1)
+    >r >r 2dup r> r> 2swap
+  ;
+
+: ?dup 
+    dup if dup then
+  ;
+
+: sqrt ( d --- n,p | d = p*p + n ) 
+    2dup or 
+    if 
+        -32768 
+        begin
+            dup >r dup m* 2over d- r@ um/mod swap drop 2/ r> swap
+        ?dup while
+            - 
+        repeat 
+        1- >r r@ r@ m* d- drop r> 
+    then
+  ;
