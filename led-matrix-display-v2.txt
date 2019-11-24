@@ -1,8 +1,8 @@
 \ *********************************************************************
-\ Examples using SPI Interface
-\ Drive a MAX7219 display chip with 8x8 LED matrix
+\ Drive MAX7219 display chip 8x8 LED matrix
 \    Filename:      led-matrix-display.txt
 \    Date:          18/11/2019
+\    Updated:       24/11/2019
 \    File Version:  1.0
 \    MCU:           ARDUINO all models
 \    Copyright:     Marc PETREMANN
@@ -15,55 +15,68 @@
 -8x8
 marker -8x8
 
+\ c1 register
+\ c2 data
 : max7219.send ( c1 c2 -- )
     mSS1 slave.select
     swap spi.csend spi.csend 
     mSS1 slave.deselect
   ;
 
-: disp.normal ( -- ) $0c $01 max7219.send ;
-: disp.shutdown ( -- ) $0c $00 max7219.send ;
+: disp.normal   ( -- ) 
+    $0c $01 max7219.send ;
+: disp.shutdown ( -- ) 
+    $0c $00 max7219.send ;
 
-: disp.test.on ( -- ) $0f $01 max7219.send ;
-: disp.test.off ( -- ) $0f $00 max7219.send ;
+: disp.test.on  ( -- ) $0f 
+    $01 max7219.send ;
+: disp.test.off ( -- ) 
+    $0f $00 max7219.send ;
 
-: disp.no.op ( -- ) $00 $00 max7219.send ;
-: disp.intensity ( c -- ) $0a swap max7219.send ;
-: disp.decode ( c -- ) $09 swap max7219.send ;
-: disp.scan.limit ( c -- ) $0b swap max7219.send ;
-: disp.set.digit ( cbits cdigit -- ) swap max7219.send ;
+: disp.no.op      ( -- )    
+    $00 $00  max7219.send ;
+: disp.intensity  ( c -- )  
+    $0a swap max7219.send ;
+: disp.decode     ( c -- )  
+    $09 swap max7219.send ;
+: disp.scan.limit ( c -- )  
+    $0b swap max7219.send ;
+: disp.set.digit  ( cbits cdigit -- ) 
+    swap max7219.send ;
 
 : disp-test-1 ( -- ) \ all LEDs on full, 232mA needed
-  spi.init
-  disp.test.on
-  begin key? until
-  disp.test.off
-  spi.close
-;
+    spi.init
+    disp.test.on
+    begin key? until
+    disp.test.off
+    spi.close
+  ;
 : disp-test-2 ( -- ) \ left 4 LEDs on first row, 42mA needed
-  spi.init
-  disp.normal
-  $03 disp.intensity
-  $00 disp.scan.limit
-  $f0 $01 disp.set.digit
-  begin key? until
-  disp.shutdown
-  spi.close
-;
+    spi.init
+    disp.normal
+    $03 disp.intensity
+    $00 disp.scan.limit
+    $f0 $01 disp.set.digit
+    begin key? until
+    disp.shutdown
+    spi.close
+  ;
+
 : disp-test-3 ( -- ) \ draw face, 18mA needed
-  spi.init
-  disp.normal
-  $01 disp.intensity
-  $07 disp.scan.limit
-  %00000000 $01 disp.set.digit
-  %01100110 $02 disp.set.digit
-  %00000000 $03 disp.set.digit
-  %00011000 $04 disp.set.digit
-  %00011000 $05 disp.set.digit
-  %10000001 $06 disp.set.digit
-  %01000010 $07 disp.set.digit
-  %00111100 $08 disp.set.digit
-  begin key? until
-  disp.shutdown
-  spi.close
-;
+    spi.init
+    disp.normal
+    $01 disp.intensity
+    $07 disp.scan.limit
+    $00 disp.decode
+    %00000000 $01 disp.set.digit
+    %01100110 $02 disp.set.digit
+    %00000000 $03 disp.set.digit
+    %00011000 $04 disp.set.digit
+    %00011000 $05 disp.set.digit
+    %10000001 $06 disp.set.digit
+    %01000010 $07 disp.set.digit
+    %00111100 $08 disp.set.digit
+    begin key? until
+    disp.shutdown
+    spi.close
+  ;
