@@ -1,0 +1,73 @@
+\ ******************************************************************************
+\ Example of FORTH traffic light management
+\
+\ Forth version: Flash Forth (http://flashforth.com/) 
+\ for ARDUINO NANO
+\ author: M PETREMANN
+\ Creation:     25 mai 2019
+\ Modification: 30 nov 2019
+\ ******************************************************************************
+
+decimal
+-readwrite           \ delete precedents definitions created after -readwrite
+marker -readwrite    \ define marker -readwrite
+decimal
+
+\ PORTB
+43 constant PORTD	\ Port D Data Register
+42 constant DDRD	\ Port D Data Direction Register
+\ 41 constant PIND	\ Port D Input Pins - unused
+
+: defLED: ( PORTx mask --- <word> | <word> --- mask port)
+    create
+        , ,             \ compile PORT and min mask
+    does>
+        dup @           \ push pin mask
+        swap 2+ @       \ push PORT
+    ;
+
+\ définition LED.xx
+eeprom
+PORTD $10 defLED: LED.red
+PORTD $08 defLED: LED.yellow
+PORTD $04 defLED: LED.green
+
+: led.ON ( <pin> ---)
+    mset  ;    \ turn pin ON
+: led.OFF ( <pin> ---)
+    mclr  ;    \ turn pin OFF
+
+: init.LEDs ( ---)
+    LED.red     drop
+    LED.yellow  drop +
+    LED.green   drop +  DDRD mset  ;
+
+: traffic.lights ( ---)
+    LED.green   led.ON   3000 ms    LED.green   led.OFF
+    LED.yellow  led.ON    800 ms    LED.yellow  led.OFF
+    LED.red     led.ON   3000 ms    LED.red     led.OFF  ;
+\ trafic.lights execute one light cycle
+
+: lights.loop ( ---)
+    init.LEDs
+    begin
+        traffic.lights
+    key? until ;
+
+\ german trafic light style
+: D.traffic ( ---)
+    LED.green   led.ON   3000 ms    LED.green   led.OFF
+    LED.yellow  led.ON    800 ms    LED.yellow  led.OFF
+    LED.red     led.ON   3000 ms    
+    LED.yellow  led.ON    800 ms 
+    \ simultaneous red and yellow ON
+    LED.red     led.OFF  \ simultaneous red and yellow OFF
+    LED.yellow  led.OFF  ;
+\ trafic.lights execute one light cycle
+
+: D.lights.loop ( ---)
+    init.LEDs
+    begin
+        D.traffic
+    key? until ;
+
