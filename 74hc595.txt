@@ -35,20 +35,20 @@ NB_4HC595 8 * constant NB_REG_PINS \ number of Register Pins
 \ 35 constant PINB	\ Port B Input Pins - unused
 
 : defPIN: ( PORTx mask --- <word> | <word> --- mask port)
-    eeprom
     create
         , ,             \ compile PORT and min mask
-    flash
     does>
         dup @           \ push pin mask
         swap 2+ @       \ push PORT
     ;
 
 \ for Arduino MEGA
+eeprom
 PORTB %00010000 defPIN: SER     \ PB4 -> pin 14 on the 75HC595 - dataPin
 PORTB %00100000 defPIN: RCLK    \ PB5 -> pin 12 on the 75HC595 - latchPin
 PORTB %01000000 defPIN: SRCLK   \ PB6 -> pin 11 on the 75HC595 - clockPin
 \ PORTB %10000000 defPIN: OE      \ PB7 -> pin 13 on the 75HC595 - unused
+ram
 
 : init.74HC595 ( ---)
     SER     drop
