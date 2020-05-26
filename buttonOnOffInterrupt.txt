@@ -1,5 +1,5 @@
 \ *********************************************************************
-\ Manage button by interrupt for On/Off
+\ Manage button by interrupt for On/Off - work in progress
 \    Filename:      buttonOnOffInterrupt.txt
 \    Date:          23/05/2020
 \    Updated:       26/05/2020
