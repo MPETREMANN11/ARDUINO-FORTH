@@ -1,0 +1,93 @@
+\ *********************************************************************
+\ Manage button by interrupt for On/Off
+\    Filename:      buttonOnOffInterrupt.txt
+\    Date:          23/05/2020
+\    Updated:       26/05/2020
+\    File Version:  1.0
+\    MCU:           ARDUINO all models
+\    Copyright:     Marc PETREMANN
+\    Author:        Marc PETREMANN
+\    GNU General Public License
+\ *********************************************************************
+
+empty
+
+: defPIN: ( PORTx mask --- <word> | <word> --- mask port)
+    create
+        c, c,           \ compile PORT and min mask
+    does>
+        dup c@          \ push pin mask
+        swap 1+ c@      \ push PORT
+  ;
+
+\ PORT B
+37 constant PORTB	\ Port B Data Register
+36 constant DDRB	\ Port B Data Direction Register
+\ 35 constant PINB	\ Port B Input Pins
+
+\ PORT D
+43 constant PORTD	\ Port D Data Register
+42 constant DDRD	\ Port D Data Direction Register
+\ 41 constant PIND	\ Port D Input Pins
+
+eeprom
+\ PB5 on Arduino NANO
+PORTB %00100000 defPIN: LED
+\ PB7 on Arduino MEGA
+\ PORTB %10000000 defPIN: LED
+\ PD2 on Arduino NANO
+PORTD %00000100 defPIN: BUTTON
+\ PD0 on Arduino MEGA
+\ PORTD %00000001 defPIN: BUTTON
+flash
+
+: init.ports ( ---)
+    LED drop 1- mset    \ set PB5 for output
+  ;
+
+: LED.on ( ---)
+    LED mset ;
+: LED.off ( ---)
+    LED mclr ;
+: LED.toggle ( ---)
+    LED mtst
+    if      LED.off
+    else    LED.on
+    then ;
+
+: BUTTON? ( --- fl)
+    BUTTON 2- mtst      \ test if button is pressed
+    if      true        \ button pressed
+    else    false  then \ button released
+  ;
+
+-zz
+marker -zz
+
+: button.action ( ---)
+    BUTTON?
+    if
+        LED.toggle
+    then
+  ;i
+
+59 constant GICR	\ General Interrupt Control Register  
+85 constant MCUCR	\ MCU Control Register
+  
+\ ATTENTION: spécifique Mega 2560
+eeprom
+10  constant PCINT0     \ vecteur number interrupt 4 for PCINT0
+107 constant PCMSK0     \ Pin Change Mask Register 0
+104 constant PCICR	\ Pin Change Interrupt Control Register $68
+flash
+
+: init.interrupt ( ---)
+    %01000000 GICR mset \ activate INT0
+  ;
+
+: int-enable ( ---)
+    ['] button.action PCINT0 int!
+    ei                  \ ei = Enable Interrupt
+  ;
+int-enable
+
