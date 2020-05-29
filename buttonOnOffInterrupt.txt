@@ -77,19 +77,11 @@ flash
 
 \ EXTERNAL_INTERRUPT
 $69 constant EICRA	\ External Interrupt Control Register A
-$3c constant EIFR	\ External Interrupt Flag Register
+\ $3c constant EIFR	\ External Interrupt Flag Register
 $3d constant EIMSK	\ External Interrupt Mask Register
 
 eeprom
 $0002 constant INT0Addr \ interrupt addr for INT0
-flash
-
-
-\ ATTENTION: spécifique Mega 2560
-eeprom
-10  constant PCINT0     \ vecteur number interrupt 4 for PCINT0
-107 constant PCMSK0     \ Pin Change Mask Register 0
-104 constant PCICR	\ Pin Change Interrupt Control Register $68
 flash
 
 : init.interrupt ( ---)
