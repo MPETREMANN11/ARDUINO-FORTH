@@ -2,7 +2,7 @@
 \ Manage button by interrupt for On/Off - work in progress
 \    Filename:      buttonOnOffInterrupt.txt
 \    Date:          23/05/2020
-\    Updated:       26/05/2020
+\    Updated:       29/05/2020
 \    File Version:  1.0
 \    MCU:           ARDUINO all models
 \    Copyright:     Marc PETREMANN
@@ -22,13 +22,21 @@ empty
 
 \ PORT B
 37 constant PORTB	\ Port B Data Register
-36 constant DDRB	\ Port B Data Direction Register
+\ 36 constant DDRB	\ Port B Data Direction Register
 \ 35 constant PINB	\ Port B Input Pins
 
 \ PORT D
 43 constant PORTD	\ Port D Data Register
-42 constant DDRD	\ Port D Data Direction Register
+\ 42 constant DDRD	\ Port D Data Direction Register
 \ 41 constant PIND	\ Port D Input Pins
+
+\ convert PORT addr to DDR address
+: >ddr ( addr1 ---  addr1-1 )
+    1- ;
+
+\ convert PORT addr to Port INput address
+: >pin ( addr1 ---  addr1-2 )
+    2 - ;
 
 eeprom
 \ PB5 on Arduino NANO
@@ -42,7 +50,7 @@ PORTD %00000100 defPIN: BUTTON
 flash
 
 : init.ports ( ---)
-    LED drop 1- mset    \ set PB5 for output
+    LED >ddr mset    \ set PB5 for output
   ;
 
 : LED.on ( ---)
@@ -55,25 +63,29 @@ flash
     else    LED.on
     then ;
 
-: BUTTON? ( --- fl)
-    BUTTON 2- mtst      \ test if button is pressed
+: button? ( --- fl)
+    BUTTON >pin mtst    \ test if button is pressed
     if      true        \ button pressed
     else    false  then \ button released
   ;
 
--zz
-marker -zz
+\ : button.action ( ---)
+\     BUTTON?
+\     if
+\         LED.toggle
+\     then
+\   ;
 
-: button.action ( ---)
-    BUTTON?
-    if
-        LED.toggle
-    then
-  ;i
+\ EXTERNAL_INTERRUPT
+$69 constant EICRA	\ External Interrupt Control Register A
+$3c constant EIFR	\ External Interrupt Flag Register
+$3d constant EIMSK	\ External Interrupt Mask Register
 
-59 constant GICR	\ General Interrupt Control Register  
-85 constant MCUCR	\ MCU Control Register
-  
+eeprom
+$0002 constant INT0Addr \ interrupt addr for INT0
+flash
+
+
 \ ATTENTION: spécifique Mega 2560
 eeprom
 10  constant PCINT0     \ vecteur number interrupt 4 for PCINT0
@@ -82,12 +94,28 @@ eeprom
 flash
 
 : init.interrupt ( ---)
-    %01000000 GICR mset \ activate INT0
+    %00000011 EICRA mset    \ interrupt on rising edge
+    %00000001 EIMSK mset    \ activate INT0
   ;
 
+
+: tempo ( ---)
+   3000 for next ;
+  
+: int-action ( ---)
+    di  \ disable interrupt
+    tempo
+    LED.toggle
+    tempo
+    ei
+  ;i
+
 : int-enable ( ---)
-    ['] button.action PCINT0 int!
+    ['] int-action INT0Addr int!
     ei                  \ ei = Enable Interrupt
   ;
+
+init.ports
+init.interrupt
 int-enable
 
