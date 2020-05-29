@@ -10,8 +10,6 @@
 \    GNU General Public License
 \ *********************************************************************
 
-empty
-
 : defPIN: ( PORTx mask --- <word> | <word> --- mask port)
     create
         c, c,           \ compile PORT and min mask
