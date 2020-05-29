@@ -67,6 +67,7 @@ flash
     else    false  then \ button released
   ;
 
+\ only for test
 \ : button.action ( ---)
 \     BUTTON?
 \     if
