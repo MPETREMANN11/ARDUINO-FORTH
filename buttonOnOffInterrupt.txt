@@ -10,31 +10,12 @@
 \    GNU General Public License
 \ *********************************************************************
 
-: defPIN: ( PORTx mask --- <word> | <word> --- mask port)
-    create
-        c, c,           \ compile PORT and min mask
-    does>
-        dup c@          \ push pin mask
-        swap 1+ c@      \ push PORT
-  ;
+\ require pinsDefinition.txt
 
 \ PORT B
 37 constant PORTB	\ Port B Data Register
-\ 36 constant DDRB	\ Port B Data Direction Register
-\ 35 constant PINB	\ Port B Input Pins
-
 \ PORT D
 43 constant PORTD	\ Port D Data Register
-\ 42 constant DDRD	\ Port D Data Direction Register
-\ 41 constant PIND	\ Port D Input Pins
-
-\ convert PORT addr to DDR address
-: >ddr ( addr1 ---  addr1-1 )
-    1- ;
-
-\ convert PORT addr to Port INput address
-: >pin ( addr1 ---  addr1-2 )
-    2 - ;
 
 eeprom
 \ PB5 on Arduino NANO
@@ -48,23 +29,23 @@ PORTD %00000100 defPIN: BUTTON
 flash
 
 : init.ports ( ---)
-    LED >ddr mset    \ set PB5 for output
+    LED output    \ set PB5 for output
   ;
 
 : LED.on ( ---)
-    LED mset ;
+    LED high ;
 : LED.off ( ---)
-    LED mclr ;
+    LED low ;
 : LED.toggle ( ---)
-    LED mtst
+    LED pin@
     if      LED.off
     else    LED.on
     then ;
 
 : button? ( --- fl)
-    BUTTON >pin mtst    \ test if button is pressed
-    if      true        \ button pressed
-    else    false  then \ button released
+    BUTTON pin@    \ test if button is pressed
+    \ true  = button pressed
+    \ false = button released
   ;
 
 \ only for test
@@ -91,7 +72,7 @@ flash
 
 
 : tempo ( ---)
-   3000 for next ;
+   6000 for next ;
   
 : int-action ( ---)
     di  \ disable interrupt
