@@ -1,0 +1,65 @@
+\ *********************************************************************
+\ Multitask LED management
+\    Filename:      multiTask.txt
+\    Date:          10/06/2020
+\    Updated:       10/06/2020
+\    File Version:  1.0
+\    MCU:           ARDUINO all models
+\    Copyright:     Marc PETREMANN
+\    Author:        Marc PETREMANN
+\    GNU General Public License
+\ *********************************************************************
+
+\ require task.txt
+\ require pinsDefinition.txt
+
+-testLED
+marker -testLED
+
+\ tests
+\ PORTB
+37 constant PORTB               \ Port B Data Register
+PORTB %00000001 defPIN: RED     \ red led on PB0
+PORTB %00000010 defPIN: BLUE1   \ b
+lue 1 led on PB1
+PORTB %00000100 defPIN: BLUE2   \ blue 2 led on PB2
+\ : init.ports ( ---)
+\    RED output
+\    BLUE1 output
+\    BLUE2 output
+\  ;
+
+: blink.RED ( ---)
+    RED output          \ init portB
+    begin
+        RED high
+        200 ms
+        RED low
+        200 ms
+    again
+  ;
+
+: wigwag.BLUE ( ---)
+    BLUE1 output        \ init portB
+    BLUE2 output
+    begin
+        BLUE1 high  BLUE2 low
+        350 ms
+        BLUE1 low   BLUE2 high
+        350 ms
+    again
+  ;
+
+0 20 20 0 task: task2
+0 20 20 0 task: task3
+
+: t2 ( ---)
+    ['] blink.RED    task2 tinit task2 run  ;
+: t3 ( ---)
+    ['] wigwag.BLUE  task3 tinit task3 run  ;
+
+\ t2            start tast2
+\ t3            start task3
+\ tasks         display all active tasks
+\ task2 end     shut down task2
+\ task3 end     shut down task3
