@@ -1,0 +1,45 @@
+\ *********************************************************************
+\ Conditional compilation
+\    Filename:      condComp.txt
+\    Date:          16/06/2020
+\    Updated:       16/06/2020
+\    File Version:  1.0
+\    MCU:           ARDUINO all models
+\    Copyright:     Marc PETREMANN
+\    Author:        Marc PETREMANN
+\    GNU General Public License
+\ *********************************************************************
+
+\ the word ?\ is a conditionnal comment. Usage:
+\ true  ?\ 2 3 + .
+\ false ?\ 4 5 + .
+
+
+\ conditionnal comment
+: ?\  ( fl --- )
+  invert
+  if
+    ['] \ execute
+  then
+; immediate
+
+
+\ Practical example for ARDUINO:
+-blink
+marker -blink
+
+true  constant NANO
+false constant MEGA
+
+\ require pinsDefinitions.txt
+37 constant PORTB
+flash
+MEGA ?\  PORTB %10000000 defPIN: LED  ( PB7 pin 13 )
+NANO ?\  PORTB %00100000 defPIN: LED  ( PB5 pin 13 )
+ram
+
+\ in interpet mode:
+LED output 
+LED high
+1000 ms
+LED low
