@@ -15,11 +15,10 @@
 \ false ?\ 4 5 + .
 
 
-\ conditionnal comment
 : ?\  ( fl --- )
-  invert
+  0=
   if
-    ['] \ execute
+    postpone \
   then
 ; immediate
 
