@@ -1,0 +1,75 @@
+\ *********************************************************************
+\ Controlling a NEMA14 motor with the A4988 driver                    *
+\    Filename:      stepperA4988.txt                                  *
+\    Date:          26.10.2020                                        *
+\    Updated:       27.10.2020                                        *
+\    File Version:  1.0                                               *
+\    MCU:           ARDUINO all models                                *
+\    GNU General Public License                                       *
+\    FF Version:    5.0                                               *
+\    Forth Author:  Marc PETREMANN                                    *
+\ *********************************************************************
+
+\ complete article: 
+\ https://arduino-forth.com/article/FORTH_FlashForth_stepMotors_driveA4988
+
+\ require pinsDefinitions.txt
+\ source: https://github.com/MPETREMANN11/ARDUINO-FORTH/blob/master/pinsDefinitions.txt
+
+-stepper
+marker -stepper
+
+decimal
+flash
+43 constant PORTD
+\ 42 constant DDRD --- unused
+\ 41 constant PIND --- unused
+PORTD %00000100 defPIN: DIRECTION
+PORTD %00001000 defPIN: PULSE
+ram
+
+\ pulse delay
+10 value pulseDelay
+
+\ send one pulse to step motor
+: impulse ( ---)
+    PULSE high
+    pulseDelay ms
+    PULSE low
+    pulseDelay ms
+ ;
+
+\ select Clock Wise rotation
+: setCW ( ---)
+    DIRECTION high
+  ;
+
+\ select Counter Clock Wise rotation
+: setCCW ( ---)
+    DIRECTION low
+  ;
+
+: setDirection ( n ---)
+    0<
+    if      setCCW
+    else    setCW
+    then
+  ;
+
+: steps ( n ---)
+    dup setDirection
+    abs
+    for
+        impulse
+    next
+  ;
+
+: init.stepper ( ---)
+    DIRECTION output
+    PULSE     output
+  ;
+
+
+\ test stepper motor
+init.stepper
+200 steps
