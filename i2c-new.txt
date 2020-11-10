@@ -49,7 +49,7 @@ marker -i2c-new
     reg:
   ;
 
-eeprom
+flash
 \ i2c Two-Wire-Interface Registers
 184 reg: TWBR   \ TWI Bit Rate register
 185 reg: TWSR   \ TWI Status Register
