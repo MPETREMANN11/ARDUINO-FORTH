@@ -55,7 +55,7 @@ marker -testLED
 \ tests
 \ PORTB
 37 constant PORTB	\ Port B Data Register
-PORTB %10000000 defPIN: LED
+PORTB %100000 defPIN: LED
 : init.ports ( ---)
     LED output
   ;
