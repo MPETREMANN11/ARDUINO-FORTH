@@ -1,5 +1,7 @@
 \ from http://www.ulisp.com/show?2GYT uLisp Thermocouple interface example
 
+\ depends on pinsDefinitions.txt
+
 -max6675
 marker -max6675
 
