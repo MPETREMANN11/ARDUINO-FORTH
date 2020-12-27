@@ -7,6 +7,9 @@
 \   GNU General Public License
 \ *********************************************************************
 
+-pindef
+marker -pindef
+
 \ Use:
 \ PORTD %10000000 defPIN: PD7  ( define portD pin #7)
 : defPIN: ( PORTx mask --- <word> | <word> --- mask port)
@@ -49,20 +52,19 @@
   ;
 
 
--testLED
-marker -testLED
+\ -testLED
+\ marker -testLED
 
-\ tests
-\ PORTB
-37 constant PORTB	\ Port B Data Register
-PORTB %100000 defPIN: LED
-: init.ports ( ---)
-    LED output
-  ;
+\ \ tests
+\ \ PORTB
+\ 37 constant PORTB	\ Port B Data Register
+\ PORTB %100000 defPIN: LED
+\ : init.ports ( ---)
+\     LED output
+\   ;
 
-init.ports
-LED high
-500 ms
-LED low
-
+\ init.ports
+\ LED high
+\ 500 ms
+\ LED low
 
