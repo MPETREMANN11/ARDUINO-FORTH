@@ -17,7 +17,7 @@ PORTB %000100 defPIN: CLK
     CLK output
     CS high ;
 
-: tc.read
+: tc.read ( --- n * 0.25ºC )
     CS low
     0
     16 for
