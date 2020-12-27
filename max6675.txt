@@ -12,28 +12,23 @@ PORTB %000100 defPIN: CLK
 : tc.init ( --- )
     SO input
     CS output
-    CLK output CLK low
+    CLK output
     CS high ;
 
 : tc.read
     CS low
-    10 ms
     0
-    #16 for
-    CLK high
-    1 ms
+    16 for
+        CLK high
         SO pin@ if
-	    r@ 1 lshift +
-	then
-	1 ms
-	CLK low
+            1 r@ lshift +
+        then
+        CLK low
     next
-	CS high
-	3 rshift
-    ;
+        CS high
+        3 rshift ;
 
 : tc.test
     begin
-	tc.read cr . 500 ms
+        tc.read cr . 500 ms
     key? until ;
-	
