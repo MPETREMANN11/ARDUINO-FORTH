@@ -17,7 +17,7 @@ PORTB %000100 defPIN: CLK
     CLK output
     CS high ;
 
-: tc.read ( --- n * 0.25ºC )
+: tc.read ( --- n * 0.25°C )
     CS low
     0
     16 for
@@ -29,6 +29,9 @@ PORTB %000100 defPIN: CLK
     next
         CS high
         3 rshift ;
+
+-test-max6675
+marker -test-max6675
 
 : tc.test
     begin
