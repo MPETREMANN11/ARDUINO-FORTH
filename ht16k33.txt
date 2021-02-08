@@ -1,0 +1,26 @@
+\ from https://github.com/adafruit/Adafruit_LED_Backpack
+
+\ depends on i2c-new.txt
+
+-ht16k33
+marker -ht16k33
+
+: ht16k33.init ( addr --- )
+    i2c.addr.write if
+	$21 i2c.tx
+    then ;
+
+: ht16k33.bright ( level addr --- )
+    i2c.addr.write if
+	$e0 or i2c.tx
+    then ;
+
+0 constant HT16K33_OFF 
+1 constant HT16K33_2Hz
+2 constant HT16K33_1Hz
+3 constant HT16K33_1/2Hz
+
+: ht16k33.blink ( rate addr --- )
+    i2c.addr.write if
+	1 lshift $81 or i2c.tx
+    then ;
