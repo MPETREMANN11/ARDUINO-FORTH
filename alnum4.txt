@@ -6,7 +6,11 @@
 -alnum4
 marker -alnum4
 
-create alnum4.font
+: table ( --- )
+    create does> ( i -- mask ) swap cells + @ ;
+
+flash
+table alnum4.font
     %0000000000000001 , %0000000000000010 , %0000000000000100 ,
     %0000000000001000 , %0000000000010000 , %0000000000100000 ,
     %0000000001000000 , %0000000010000000 , %0000000100000000 ,
@@ -114,17 +118,29 @@ create alnum4.font
     %0010010010001001 , \ }
     %0000010100100000 , \ ~
     %0011111111111111 ,
+ram
 
 variable alnum4.buffer 8 allot
 
 : alnum4.init ( addr --- )
     ht16k33.init ;
 
-: alnum4.erase ( --- )
-    alnum4.buffer 8 erase ;
+\ : alnum4.erase ( --- )
+\     alnum4.buffer 8 erase ;
 
-: alnum4.char ( a d n addr --- )
-    ;
 
-: alnum4.raw ( mask n addr --- )
-    ;
+: alnum4.raw ( mask n --- )
+    cell * alnum4.buffer + ! ;
+
+: alnum4.char ( a d n --- )
+    >r
+    if [ 1 14 lshift ] then 0 else
+    swap
+    alnum4.font +
+    or
+    r> alnum4.raw ;
+
+\ -alnum4-test
+\ marker -alnum4-test
+
+char :noname ( a d n ) r> if 
