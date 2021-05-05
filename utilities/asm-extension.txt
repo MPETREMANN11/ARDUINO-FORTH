@@ -1,0 +1,95 @@
+\ *********************************************************************
+\ FlashForth extension for assembler for Atmega chips                 *
+\    Filename:      asm-extension.txt                                 *
+\    Date:          05-05-2021                                        *
+\    FF Version:    5.0                                               *
+\    MCU:           Atmega                                            *
+\    Copyright:     Marc PETREMANN                                    *
+\    Author:        Marc PETREMANN                                    *
+\ *********************************************************************
+\    FlashForth is licensed acording to the GNU General Public License*
+\ *********************************************************************
+
+\ include asm.txt
+
+-extension
+marker -extension
+
+
+: code  ( comp: -- <name> )
+    :  postpone [
+    ;
+
+: end-code  ( -- )
+    ;
+
+: .def
+    constant ;
+
+: .equ
+    value ;
+
+\ keep lowest 8 bits from n
+: LOW ( n -- c)
+    $100 u/mod drop
+    ;
+
+\ keep highest 8 bits from n
+: HIGH ( n -- c)
+    $100 u/mod swap drop
+    ;
+
+R16     .def t0
+R17     .def t1
+\   .def t2 = r0          \ Not in interrupt
+\   .def t3 = r1          \ Not in interrupt
+
+R18     .def al
+R19     .def ah
+R20     .def pl             \ P Register and FOR..LOOP INDEX variable
+R21     .def ph
+
+R22     .def FLAGS1         \ Not in interrupt
+R23     .def FLAGS2         \ Not in interrupt
+R24     .def tosl
+R25     .def tosh
+
+0 .equ PFLASH
+$3fff   .equ FLASHEND
+
+
+: poptos
+    tosl Y+ ld,
+    tosh Y+ ld,
+    ;
+
+: pushtos
+    -Y tosh st,
+    -Y tosl st,
+    ;
+
+: sub_pflash_z
+    PFLASH 0 > if
+        ZH PFLASH HIGH subi,
+    then
+    ;
+
+: rampv_to_c
+    FLASHEND $8000 > if
+        0 bset,
+    else
+        0 bclr,
+    then
+    ;
+
+: mijmp
+    FLASHEND $ffff > if
+        eijmp,
+    else
+        ijmp,
+    then
+    ;
+
+
+
+
