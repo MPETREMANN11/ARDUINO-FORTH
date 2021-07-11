@@ -1,0 +1,39 @@
+\ from http://www.ulisp.com/show?2GYT uLisp Thermocouple interface example
+
+\ depends on pinsDefinitions.txt
+
+-max6675
+marker -max6675
+
+37 constant PORTB
+
+PORTB %000001 defPIN: SO
+PORTB %000010 defPIN: CS
+PORTB %000100 defPIN: CLK
+
+: tc.init ( --- )
+    SO input
+    CS output
+    CLK output
+    CS high ;
+
+: tc.read ( --- n * 0.25°C )
+    CS low
+    0
+    16 for
+        CLK high
+        SO pin@ if
+            1 r@ lshift +
+        then
+        CLK low
+    next
+        CS high
+        3 rshift ;
+
+-test-max6675
+marker -test-max6675
+
+: tc.test
+    begin
+        tc.read cr . 500 ms
+    key? until ;
