@@ -1,0 +1,231 @@
+\ *********************************************************************
+\ buttons multiplex for ARDUINO NANO
+\    Filename:      buttonsMultiplex.txt
+\    Date:          23 jul 2021
+\    Updated:       23 jul 2021
+\    File Version:  1.0
+\    MCU:           ARDUINO NANO
+\    Copyright:     Marc PETREMANN
+\    Author:        Marc PETREMANN
+\    GNU General Public License
+\ *********************************************************************
+
+-defPin
+marker -defPin
+
+\ *** start part of pinsDefinitions.txt *****************
+
+\ Use:
+\ PORTD %10000000 defPIN: PD7  ( define portD pin #7)
+: defPIN: ( PORTx mask --- <word> | <word> --- mask port)
+    create
+        c, c,           \ compile pin mask and PORT
+    does>
+        dup c@          \ push pin mask
+        swap 1+ c@      \ push PORT
+  ;
+
+\ Turn a pin on, dont change others
+: high ( pinmask portadr -- )
+    mset
+  ;
+
+\ Turn a pin off, dont change others
+: low ( pinmask portadr -- )
+    mclr
+  ;
+
+
+\ Only for PORTx bits
+\ address of DDRx is one less than address of PORTx
+
+\ Set DDRx so its corresponding pin is output.
+: output ( pinmask portadr -- )
+    1- high
+  ;
+
+\ Set DDRx so its corresponding pin is input.
+: input  ( pinmask portadr -- )
+    1- low
+  ;
+
+\ read the pins masked as input
+: pin@  ( pinmask portaddr -- fl )
+    2- mtst \ select PINx register as input
+    if      true
+    else    false   then
+  ;
+
+\ *** end part of pinsDefinitions.txt ******************
+
+-74hc595
+marker -74hc595
+
+\ for more 1 74HC595, change 1 by number of 74HC595
+1 constant NB_74HC595
+
+
+\ for Arduino NANO - post comm. with 74HC595
+$2b constant PORTD
+flash
+\ SERial data
+PORTD %00000100 defPIN: SER     \ PD2 -> pin 14 on the 74HC595
+
+\ storage-Register CLocK 1
+PORTD %00001000 defPIN: RCLK1   \ PD3 -> pin 12 on the  fist 74HC595
+
+\ storage-Register CLocK 2
+PORTD %00100000 defPIN: RCLK2   \ PD5 -> pin 12 on the second 74HC595
+
+\ Shift-Register CLocK
+PORTD %00010000 defPIN: SRCLK   \ PD4 -> pin 11 on the 74HC595
+ram
+
+\ init ports affected to 74HC595
+: init.74HC595 ( ---)
+    SER     output
+    RCLK1   output
+    RCLK2   output
+    SRCLK   output
+    SER     low
+    RCLK1   high
+    RCLK2   high
+    SRCLK   low
+  ;
+
+
+: csend ( c ---)
+    8 for
+        1 r@ lshift             \ calculate binary mask
+        over and                \ bit 0 or not 0
+        if      SER high        \ datapin HIGH
+        else    SER low         \ datapin LOW
+        then
+        SRCLK high              \ clockPin HIGH
+        SRCLK low               \ clockPin LOW
+    next
+    drop
+  ;
+
+: toButtons ( c -- )
+    RCLK1 low                   \ latchPin LOW
+    csend
+    RCLK1 high                  \ latchPin HIGH
+  ;
+
+: toLeds ( c -- )
+    RCLK2 low                   \ latchPin LOW
+    csend
+    RCLK2 high                  \ latchPin HIGH
+  ;
+
+-xx
+marker -xx
+
+\ array for values to transmit to 74HC595
+create bytesArray
+    NB_74HC595 allot
+
+: bytesSend ( 
+    RCLK low                    \ latchPin LOW
+    NB_74HC595 for
+        r@ bytesArray + c@ csend
+    next
+    RCLK high                   \ latchPin HIGH
+  ;
+
+
+255 bytesArray c!
+255 bytesArray 1+ c!
+
+
+init.74HC595
+init.buttons
+
+
+
+-buttonsScan
+marker -buttonsScan
+
+\ input pin - buttons output
+$25 constant PORTB
+flash
+PORTB %00000001 defPIN: BUTTONS \ PB0 (8)
+ram
+
+: init.buttons ( ---)
+    BUTTONS input
+  ;
+
+
+-psRegs
+marker -psRegs
+
+\ creation of pseudo register
+: pseudoReg: ( --- name | --- nameAddr+2)
+    create
+        0 c, 0 c, 0 c,
+    does>
+        2+
+  ;
+
+\ SWITCHES is similar as a PORTx register
+pseudoReg: SWITCHES
+
+\ Use:
+\ PORTD %10000000 defPIN: PD7  ( define portD pin #7)
+\ : defSWITCH: ( pseudoREG mask --- <name> | <name> --- mask pseudoReg)
+\     create
+\         c, ,           \ compile switch-mask and SWITCHES
+\     does>
+\         dup c@          \ push switch mask
+\         swap 1+ @       \ push SWITCHES
+\   ;
+
+
+
+\ flash
+\ list of switches
+\ SWITCHES %00000001 defSWITCH: sw01  \ switch 01
+\ SWITCHES %00000010 defSWITCH: sw02
+\ SWITCHES %00000100 defSWITCH: sw03
+\ SWITCHES %00001000 defSWITCH: sw04
+\ ram
+
+\ for later usage
+defer buttons.action
+
+\ set ON or OFF the selected switch
+: button.detect ( n ---)
+    BUTTONS pin@            \ switch active ?
+    if
+        SWITCHES mset       \ set switch ON
+    else
+        SWITCHES mclr       \ set switch OFF
+    then
+    buttons.action
+    SWITCHES dup c@ swap 2- c!
+  ;
+
+\ main loop
+: buttons.loop
+    fl- \ Disable writes to flash and eeprom
+    begin
+        1   \ start index
+        NB_REG_PINS for
+            dup csend
+            10 ms
+            dup button.detect
+            SWITCHES c@ . cr
+            2*
+        next
+        drop
+    key? until
+    fl+ \ Enable writes to flash and eeprom
+  ;
+
+
+init.74HC595
+init.buttons
+
+
