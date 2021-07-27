@@ -2,7 +2,7 @@
 \ buttons multiplex for ARDUINO NANO
 \    Filename:      buttonsMultiplex.txt
 \    Date:          23 jul 2021
-\    Updated:       23 jul 2021
+\    Updated:       27 jul 2021
 \    File Version:  1.0
 \    MCU:           ARDUINO NANO
 \    Copyright:     Marc PETREMANN
@@ -61,11 +61,7 @@ marker -defPin
 -74hc595
 marker -74hc595
 
-\ for more 1 74HC595, change 1 by number of 74HC595
-1 constant NB_74HC595
-
-
-\ for Arduino NANO - post comm. with 74HC595
+\ for Arduino NANO - port comm. with 74HC595
 $2b constant PORTD
 flash
 \ SERial data
@@ -93,9 +89,7 @@ ram
     SRCLK   low
   ;
 
-
-: csend ( c ---)
-    8 for
+\ serialize 1 byto to 74HC595
         1 r@ lshift             \ calculate binary mask
         over and                \ bit 0 or not 0
         if      SER high        \ datapin HIGH
@@ -107,40 +101,46 @@ ram
     drop
   ;
 
+\ serialize 1 byte to buttons input
 : toButtons ( c -- )
     RCLK1 low                   \ latchPin LOW
     csend
     RCLK1 high                  \ latchPin HIGH
   ;
 
+\ serialize 1 byte to LEDs
 : toLeds ( c -- )
     RCLK2 low                   \ latchPin LOW
     csend
     RCLK2 high                  \ latchPin HIGH
   ;
 
+\ set all bits to high level on buttons input
+: FFtoButtons ( -- )
+    $ff toButtons
+  ;
+
 -xx
 marker -xx
 
 \ array for values to transmit to 74HC595
-create bytesArray
-    NB_74HC595 allot
+\ create bytesArray
+\     NB_74HC595 allot
 
-: bytesSend ( 
-    RCLK low                    \ latchPin LOW
-    NB_74HC595 for
-        r@ bytesArray + c@ csend
-    next
-    RCLK high                   \ latchPin HIGH
-  ;
+\ : bytesSend ( 
+\     RCLK low                    \ latchPin LOW
+\     NB_74HC595 for
+\         r@ bytesArray + c@ csend
+\     next
+\     RCLK high                   \ latchPin HIGH
+\   ;
 
 
-255 bytesArray c!
-255 bytesArray 1+ c!
+\ 255 bytesArray c!
+\ 255 bytesArray 1+ c!
 
 
 init.74HC595
-init.buttons
 
 
 
@@ -156,6 +156,10 @@ ram
 : init.buttons ( ---)
     BUTTONS input
   ;
+
+
+init.74HC595
+init.buttons
 
 
 -psRegs
