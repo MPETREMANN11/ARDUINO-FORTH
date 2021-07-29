@@ -2,7 +2,7 @@
 \ buttons multiplex for ARDUINO NANO
 \    Filename:      buttonsMultiplex.txt
 \    Date:          23 jul 2021
-\    Updated:       27 jul 2021
+\    Updated:       29 jul 2021
 \    File Version:  1.0
 \    MCU:           ARDUINO NANO
 \    Copyright:     Marc PETREMANN
@@ -120,29 +120,6 @@ ram
     $ff toButtons
   ;
 
--xx
-marker -xx
-
-\ array for values to transmit to 74HC595
-\ create bytesArray
-\     NB_74HC595 allot
-
-\ : bytesSend ( 
-\     RCLK low                    \ latchPin LOW
-\     NB_74HC595 for
-\         r@ bytesArray + c@ csend
-\     next
-\     RCLK high                   \ latchPin HIGH
-\   ;
-
-
-\ 255 bytesArray c!
-\ 255 bytesArray 1+ c!
-
-
-init.74HC595
-
-
 
 -buttonsScan
 marker -buttonsScan
@@ -153,6 +130,7 @@ flash
 PORTB %00000001 defPIN: BUTTONS \ PB0 (8)
 ram
 
+\ init. PORT B PB0
 : init.buttons ( ---)
     BUTTONS input
   ;
@@ -162,71 +140,76 @@ init.74HC595
 init.buttons
 
 
--psRegs
-marker -psRegs
+variable LEDs    \ store result of active buttons
 
-\ creation of pseudo register
-: pseudoReg: ( --- name | --- nameAddr+2)
-    create
-        0 c, 0 c, 0 c,
-    does>
-        2+
+\ toggle LED state, c value 1 or 2 or 4.. 128
+: toggleLED ( c --- )
+    dup LEDs mtst       \ test if bit = 1   
+    if      LEDs mclr   \ clear bit
+    else    LEDs mset   \ set bit
+    then
   ;
 
-\ SWITCHES is similar as a PORTx register
-pseudoReg: SWITCHES
+\ set LED state. n between 0..7
+: setLED ( n -- )
+    1 swap lshift   \ convert n to 2 EXP n
+    toggleLED       \ toggle LED/relay state
+    LEDs @ toLeds   \ change LEDs/relay state
+  ;
 
-\ Use:
-\ PORTD %10000000 defPIN: PD7  ( define portD pin #7)
-\ : defSWITCH: ( pseudoREG mask --- <name> | <name> --- mask pseudoReg)
+: buttonsScan ( -- )
+    8 for
+        1 r@ lshift   toButtons
+        BUTTONS pin@    \ button activated?
+        if
+            r@ setLED
+        then
+    next
+  ;
+
+
+\ @TODO: test and debug following words
+
+\ creation of pseudo register
+\ : pseudoReg: ( --- name | --- nameAddr+2)
 \     create
-\         c, ,           \ compile switch-mask and SWITCHES
+\         0 c, 0 c, 0 c,
 \     does>
-\         dup c@          \ push switch mask
-\         swap 1+ @       \ push SWITCHES
+\         2+
 \   ;
 
-
-
-\ flash
-\ list of switches
-\ SWITCHES %00000001 defSWITCH: sw01  \ switch 01
-\ SWITCHES %00000010 defSWITCH: sw02
-\ SWITCHES %00000100 defSWITCH: sw03
-\ SWITCHES %00001000 defSWITCH: sw04
-\ ram
 
 \ for later usage
 defer buttons.action
 
 \ set ON or OFF the selected switch
-: button.detect ( n ---)
-    BUTTONS pin@            \ switch active ?
-    if
-        SWITCHES mset       \ set switch ON
-    else
-        SWITCHES mclr       \ set switch OFF
-    then
-    buttons.action
-    SWITCHES dup c@ swap 2- c!
-  ;
+\ : button.detect ( n ---)
+\     BUTTONS pin@            \ switch active ?
+\     if
+\         SWITCHES mset       \ set switch ON
+\     else
+\         SWITCHES mclr       \ set switch OFF
+\     then
+\     buttons.action
+\     SWITCHES dup c@ swap 2- c!
+\   ;
 
 \ main loop
-: buttons.loop
-    fl- \ Disable writes to flash and eeprom
-    begin
-        1   \ start index
-        NB_REG_PINS for
-            dup csend
-            10 ms
-            dup button.detect
-            SWITCHES c@ . cr
-            2*
-        next
-        drop
-    key? until
-    fl+ \ Enable writes to flash and eeprom
-  ;
+\ : buttons.loop
+\     fl- \ Disable writes to flash and eeprom
+\     begin
+\         1   \ start index
+\         NB_REG_PINS for
+\             dup csend
+\             10 ms
+\             dup button.detect
+\             SWITCHES c@ . cr
+\             2*
+\         next
+\         drop
+\     key? until
+\     fl+ \ Enable writes to flash and eeprom
+\   ;
 
 
 init.74HC595
