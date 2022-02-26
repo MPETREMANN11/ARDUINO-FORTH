@@ -1,0 +1,109 @@
+\ *********************************************************************
+\ VT100 
+\    Filename:      vt100terminal.txt
+\    Date:          15/09/2020
+\    Updated:       17/09/2020
+\    File Version:  1.0
+\    MCU:           ARDUINO all models
+\    Copyright:     Marc PETREMANN
+\    Author:        Marc PETREMANN
+\    GNU General Public License
+\ *********************************************************************
+
+\ convert int to char sequence and display it
+: .#c ( n ---)
+    base @ >r
+    decimal
+    0           \ convert to unsigned double integer
+    <# #s #>    \ convert to string
+    type        \ display string
+    r> base ! ;
+
+\ start escape sequence 
+: .esc ( ---)
+    27 emit  ;  \ send ESC char
+
+\ start escape[ sequence 
+: .esc[ ( ---)
+    .esc 
+    [char] [ emit  ;  \ send ESC[ char
+
+\ set cursor at x y position on screen terminal
+: at-xy ( x y ---)
+    .esc[
+    .#c             \ send y position
+    [char] ; emit
+    .#c             \ send x position
+    [char] H emit ;
+  
+\ clear entire screen
+: page ( ---)
+    .esc[ ." 2J"
+    0 0 at-xy ;
+
+0 constant black
+1 constant red
+2 constant green
+3 constant yellow
+4 constant blue
+5 constant magenta
+6 constant cyan
+7 constant white
+
+: bold  ( ---)
+    .esc[ ." 1m" ; 
+
+: underline ( ---)
+    .esc[ ." 4m" ; 
+
+: negative ( ---)
+    .esc[ ." 7m" ; 
+
+: normal ( ---)
+    .esc[ ." 0m" ; 
+
+: background ( color ---) 
+    .esc[ 
+    [char] 4 emit
+    .#c 
+    [char] m emit ; 
+
+: foreground ( color ---)
+    .esc[ 
+    [char] 3 emit
+    .#c 
+    [char] m emit ; 
+
+: alternate-font ( ---)
+    .esc ." (0" ; 
+
+: ascii-font ( ---)
+    .esc ." (B" ; 
+
+
+
+
+
+: .chars ( ---)
+    128 32 - for
+        r@ 32 + emit
+    next ;
+
+
+\ *** NOT FUNCTIONNAL ***
+
+: primary-font
+    .esc[ ." 10m" ; 
+
+: f1 
+  .esc[ ." 11m" ;  
+
+: rf  \ reset font config 
+  .esc[ ." 10c" ;  
+
+
+: italic
+    .esc[ ." 3m" ; 
+
+
+
